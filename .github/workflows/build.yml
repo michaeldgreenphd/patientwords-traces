@@ -9,7 +9,7 @@ concurrency:
   group: build-traces
   cancel-in-progress: false
 env:
-  ENGINE_RENDER_BRANCH: claude/gemma-clinical-colloquial-interp-mavx04
+  ENGINE_RENDER_BRANCH: main
 jobs:
   build:
     runs-on: ubuntu-latest
