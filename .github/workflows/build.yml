@@ -55,11 +55,25 @@ jobs:
           print(f"{copied} copied, {unchanged} unchanged, {missing} without a render")
           EOF
           rm -rf eng payload.json
+      - name: Heartbeat when the repository has been quiet for 50 days
+        # GitHub disables scheduled workflows in a public repository after 60 days
+        # with no repository activity. This build commits only when renders change,
+        # so a quiet engine would let the nightly schedule lapse. A dated heartbeat
+        # file, written at most every 50 days, keeps a commit inside that window.
+        run: |
+          last=$(git log -1 --format=%ct)
+          age_days=$(( ( $(date +%s) - last ) / 86400 ))
+          echo "last commit ${age_days} days ago"
+          if [ "$age_days" -ge 50 ]; then
+            date -u +%Y-%m-%dT%H:%M:%SZ > .keepalive
+            echo "wrote .keepalive"
+          fi
       - name: Commit and push
         run: |
           git config user.name "traces-build"
           git config user.email "actions@users.noreply.github.com"
           git add -A t/ .nojekyll
+          if [ -f .keepalive ]; then git add .keepalive; fi
           git diff --cached --quiet && echo "no changes" || {
             git commit -m "Build: sync payload-listed renders from the engine"
             git push
