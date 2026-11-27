@@ -45,7 +45,14 @@ jobs:
                   missing += 1
                   continue
               dst = pathlib.Path("t") / batch / src.name
-              if dst.is_file() and dst.stat().st_size == src.stat().st_size:
+              # Unchanged only when the bytes match. Equal size is not enough: a
+              # re-traced render can keep its byte size. Found 2026-11-20:
+              # t/pairs_20260719T132706Z/index_44.html was 1,615,110 bytes here and
+              # in the engine, with different contents, and was never re-copied.
+              # Same rule as publish() in the engine's scripts/export_traces_site.py;
+              # change both together.
+              if (dst.is_file() and dst.stat().st_size == src.stat().st_size
+                      and dst.read_bytes() == src.read_bytes()):
                   unchanged += 1
                   continue
               dst.parent.mkdir(parents=True, exist_ok=True)
